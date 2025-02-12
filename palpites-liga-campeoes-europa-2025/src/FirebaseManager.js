@@ -1,7 +1,17 @@
-import { initializeApp } from 'firebase/app';
+import { initializeApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
-import { getFirestore, collection, doc, setDoc, getDocs, query, where, updateDoc, documentId } from 'firebase/firestore';
-import { getDownloadURL, getStorage, ref, uploadBytes } from 'firebase/storage';
+import {
+  getFirestore,
+  collection,
+  doc,
+  setDoc,
+  getDocs,
+  query,
+  where,
+  updateDoc,
+  documentId,
+} from "firebase/firestore";
+import { getDownloadURL, getStorage, ref, uploadBytes } from "firebase/storage";
 
 const firebaseConfig = {
   apiKey: process.env.REACT_APP_API_KEY,
@@ -9,7 +19,7 @@ const firebaseConfig = {
   projectId: process.env.REACT_APP_PROJECT_ID,
   storageBucket: process.env.REACT_APP_STORAGE_BUCKET,
   messagingSenderId: process.env.REACT_APP_MESSAGING_SENDER_ID,
-  appId: process.env.REACT_APP_APP_ID
+  appId: process.env.REACT_APP_APP_ID,
 };
 
 export const initialPoints = 1000;
@@ -28,7 +38,7 @@ export async function downloadProfilePicture(userUID) {
 
   return {
     userUID,
-    url
+    url,
   };
 }
 
@@ -39,7 +49,7 @@ export async function uploadProfilePicture(imageFile) {
   const storRef = ref(storage, renamedFile.name);
 
   await updateDoc(doc(db, "users", userUID), {
-    hasPicture: true
+    hasPicture: true,
   });
 
   return uploadBytes(storRef, renamedFile);
@@ -52,7 +62,7 @@ export async function getLoggedUser() {
 export async function getFixturesCount() {
   const fixtures = collection(db, "fixtures");
   const fixtureSnapshot = await getDocs(fixtures);
-  
+
   return fixtureSnapshot.size;
 }
 
@@ -63,11 +73,13 @@ export async function getFixtures() {
   const stages = collection(db, "stages");
   const stageSnapshot = await getDocs(stages);
 
-  const fixtureList = fixtureSnapshot.docs.map(doc => ({
+  const fixtureList = fixtureSnapshot.docs.map((doc) => ({
     ...doc.data(),
-    stage: stageSnapshot.docs.find(st => st.id == doc.data().stage.id)?.data(),
+    stage: stageSnapshot.docs
+      .find((st) => st.id == doc.data().stage.id)
+      ?.data(),
     id: doc.id,
-    canBet: doc.data().date.seconds > Date.now() / 1000 + 5400
+    canBet: doc.data().date.seconds > Date.now() / 1000 + 5400,
   }));
 
   return fixtureList;
@@ -83,10 +95,12 @@ export async function getFixture(fixtureID) {
   const stageSnapshot = await getDocs(stages);
 
   const fixtureSnapshot = await getDocs(fixtures);
-  const fixtureList = fixtureSnapshot.docs.map(doc => ({
+  const fixtureList = fixtureSnapshot.docs.map((doc) => ({
     ...doc.data(),
     id: doc.id,
-    stage: stageSnapshot.docs.find(st => st.id == doc.data().stage.id)?.data()
+    stage: stageSnapshot.docs
+      .find((st) => st.id == doc.data().stage.id)
+      ?.data(),
   }));
 
   return fixtureList?.length > 0 ? fixtureList[0] : null;
@@ -95,14 +109,13 @@ export async function getFixture(fixtureID) {
 export async function setFixtureTeamName(fixtureID, team, teamName) {
   const fixtures = collection(db, "fixtures");
 
-  const currentFixture = await getDocs(query(
-    fixtures,
-    where(documentId(), "==", fixtureID)
-  ));
+  const currentFixture = await getDocs(
+    query(fixtures, where(documentId(), "==", fixtureID))
+  );
 
   if (currentFixture.docs.length != 0) {
     await updateDoc(doc(db, "fixtures", currentFixture.docs[0].id), {
-      [team]: teamName
+      [team]: teamName,
     });
   }
 }
@@ -118,7 +131,7 @@ export async function getGuess(fixtureID, userUID) {
     where("userUID", "==", userUID)
   );
   const guessSnapshot = await getDocs(guesses);
-  const guessesList = guessSnapshot.docs.map(doc => doc.data());
+  const guessesList = guessSnapshot.docs.map((doc) => doc.data());
   return guessesList?.length > 0 ? guessesList[0] : null;
 }
 
@@ -128,14 +141,16 @@ export async function getGuesses(fixtureID) {
     where("fixtureID", "==", fixtureID)
   );
   const guessSnapshot = await getDocs(guesses);
-  const guessesList = guessSnapshot.docs.map(doc => doc.data());
-  
-  const users = await Promise.all(guessesList.map(g => getUser(g.userUID)));
+  const guessesList = guessSnapshot.docs.map((doc) => doc.data());
 
-  return guessesList.map(g => ({
-    ...g,
-    user: users.find(u => u.uid == g.userUID)
-  })).filter(g => !g.user?.test);
+  const users = await Promise.all(guessesList.map((g) => getUser(g.userUID)));
+
+  return guessesList
+    .map((g) => ({
+      ...g,
+      user: users.find((u) => u.uid == g.userUID),
+    }))
+    .filter((g) => !g.user?.test);
 }
 
 export async function getExtraPointsFactorForFixture(fixtureID) {
@@ -144,8 +159,8 @@ export async function getExtraPointsFactorForFixture(fixtureID) {
     where(documentId(), "==", fixtureID)
   );
   const fixtureSnapshot = await getDocs(fixture);
-  const fixturesList = fixtureSnapshot.docs.map(doc => doc.data());
-  
+  const fixturesList = fixtureSnapshot.docs.map((doc) => doc.data());
+
   if (fixturesList.length == 0) {
     return 1;
   }
@@ -155,7 +170,7 @@ export async function getExtraPointsFactorForFixture(fixtureID) {
     where(documentId(), "==", fixturesList[0].stage.id)
   );
   const stageSnapshot = await getDocs(stage);
-  const stagesList = stageSnapshot.docs.map(doc => doc.data());
+  const stagesList = stageSnapshot.docs.map((doc) => doc.data());
 
   if (stagesList.length == 0) {
     return 1;
@@ -169,11 +184,13 @@ export async function setGuess(fixtureID, result, betValue) {
 
   const guesses = collection(db, "guesses");
 
-  const currentGuess = await getDocs(query(
-    guesses,
-    where("fixtureID", "==", fixtureID),
-    where("userUID", "==", userUID)
-  ));
+  const currentGuess = await getDocs(
+    query(
+      guesses,
+      where("fixtureID", "==", fixtureID),
+      where("userUID", "==", userUID)
+    )
+  );
 
   if (currentGuess.docs.length == 0) {
     await setDoc(doc(db, "guesses", `${fixtureID};${userUID}`), {
@@ -181,13 +198,12 @@ export async function setGuess(fixtureID, result, betValue) {
       userUID,
       result,
       betValue,
-      username: doc(db, "users", userUID)
+      username: doc(db, "users", userUID),
     });
-  }
-  else {
+  } else {
     await updateDoc(doc(db, "guesses", currentGuess.docs[0].id), {
       result,
-      betValue
+      betValue,
     });
   }
 }
@@ -201,7 +217,7 @@ export async function getUserFilterPreference() {
   );
 
   const userSnapshot = await getDocs(users);
-  const usersList = userSnapshot.docs.map(doc => doc.data());
+  const usersList = userSnapshot.docs.map((doc) => doc.data());
   return usersList?.length > 0 ? usersList[0].filterPreference : null;
 }
 
@@ -209,7 +225,7 @@ export async function setUserFilterPreference(filterPreference) {
   const userUID = getAuth().currentUser.uid;
 
   await updateDoc(doc(db, "users", userUID), {
-    filterPreference
+    filterPreference,
   });
 }
 
@@ -218,9 +234,9 @@ export async function getMatchResult(fixtureID) {
     collection(db, "matchResults"),
     where("fixtureID", "==", fixtureID)
   );
-  
+
   const matchResultSnapshot = await getDocs(matchResults);
-  const matchResultsList = matchResultSnapshot.docs.map(doc => doc.data());
+  const matchResultsList = matchResultSnapshot.docs.map((doc) => doc.data());
   return matchResultsList?.length > 0 ? matchResultsList[0] : null;
 }
 
@@ -229,20 +245,18 @@ export async function setMatchResult(fixtureID, result) {
 
   const matchResults = collection(db, "matchResults");
 
-  const currentMatchResult = await getDocs(query(
-    matchResults,
-    where("fixtureID", "==", fixtureID)
-  ));
+  const currentMatchResult = await getDocs(
+    query(matchResults, where("fixtureID", "==", fixtureID))
+  );
 
   if (currentMatchResult.docs.length == 0) {
     await setDoc(doc(db, "matchResults", `${fixtureID};${userUID}`), {
       fixtureID,
-      result
+      result,
     });
-  }
-  else {
+  } else {
     await updateDoc(doc(db, "matchResults", currentMatchResult.docs[0].id), {
-      result
+      result,
     });
   }
 }
@@ -251,14 +265,14 @@ export async function createUser(user) {
   const users = collection(db, "users");
   const userSnapshot = await getDocs(users);
 
-  if (!userSnapshot.docs.some(u => u.data().uid == user.uid)) {
+  if (!userSnapshot.docs.some((u) => u.data().uid == user.uid)) {
     await setDoc(doc(db, "users", user.uid), {
       uid: user.uid,
       email: user.email,
       username: user.username,
       filterPreference: 0,
       test: false,
-      hasPicture: false
+      hasPicture: false,
     });
   }
 }
@@ -267,19 +281,16 @@ export async function getUser(userUID) {
   const users = collection(db, "users");
   const userSnapshot = await getDocs(users);
 
-  const user = userSnapshot.docs.find(u => u.data().uid == userUID)?.data();
+  const user = userSnapshot.docs.find((u) => u.data().uid == userUID)?.data();
 
   return user;
 }
 
 export async function getAllUsers() {
-  const users = query(
-    collection(db, "users"),
-    where("test", "==", false)
-  );
+  const users = query(collection(db, "users"), where("test", "==", false));
   const userSnapshot = await getDocs(users);
 
-  const usersList = userSnapshot.docs.map(doc => doc.data());
+  const usersList = userSnapshot.docs.map((doc) => doc.data());
 
   return usersList;
 }
@@ -292,7 +303,7 @@ export async function getAllUsersWithPictures() {
   );
   const userSnapshot = await getDocs(users);
 
-  const usersList = userSnapshot.docs.map(doc => doc.data());
+  const usersList = userSnapshot.docs.map((doc) => doc.data());
 
   return usersList;
 }
@@ -301,7 +312,9 @@ export async function getUserByUsername(username) {
   const users = collection(db, "users");
   const userSnapshot = await getDocs(users);
 
-  const user = userSnapshot.docs.find(u => u.data().username == username)?.data();
+  const user = userSnapshot.docs
+    .find((u) => u.data().username == username)
+    ?.data();
 
   return user;
 }
@@ -312,12 +325,12 @@ export async function getMatchResults() {
 
   const allFixtures = await getFixtures();
 
-  const matchResultList = matchResultSnapshot.docs.map(doc => ({
+  const matchResultList = matchResultSnapshot.docs.map((doc) => ({
     ...doc.data(),
-    date: allFixtures.find(f => f.id == doc.data().fixtureID)?.date,
-    index: allFixtures.find(f => f.id == doc.data().fixtureID)?.index
+    date: allFixtures.find((f) => f.id == doc.data().fixtureID)?.date,
+    index: allFixtures.find((f) => f.id == doc.data().fixtureID)?.index,
   }));
-  
+
   return matchResultList;
 }
 
@@ -325,16 +338,18 @@ export async function getStages() {
   const stages = collection(db, "stages");
   const stageSnapshot = await getDocs(stages);
 
-  const stagesList = stageSnapshot.docs.map(doc => ({
+  const stagesList = stageSnapshot.docs.map((doc) => ({
     ...doc.data(),
-    id: doc.id
+    id: doc.id,
   }));
 
   return stagesList;
 }
 
 export async function calculateBetIncome(fixtureID, userUID, matchResults) {
-  const matchResult = matchResults.find(mr => mr.fixtureID == fixtureID)?.result;
+  const matchResult = matchResults.find(
+    (mr) => mr.fixtureID == fixtureID
+  )?.result;
 
   if (matchResult == null) return 0;
 
@@ -342,10 +357,10 @@ export async function calculateBetIncome(fixtureID, userUID, matchResults) {
   if (userGuess == null) {
     userGuess = {
       result: null,
-      betValue: 30
+      betValue: 30,
     };
   }
-  
+
   if (matchResult != userGuess.result) return -userGuess.betValue;
 
   const allGuesses = await getGuesses(fixtureID);
@@ -356,17 +371,21 @@ export async function calculateBetIncome(fixtureID, userUID, matchResults) {
 
   const betExtraRatio = 2.25 * extraPointsFactor;
   const allBetsSum = allGuesses
-    .map(g => parseInt(g.betValue))
+    .map((g) => parseInt(g.betValue))
     .reduce((a, b) => a + b, 0);
 
   const allCorrectBetsSum = allGuesses
-    .filter(g => g.result == matchResult)
-    .map(g => parseInt(g.betValue))
+    .filter((g) => g.result == matchResult)
+    .map((g) => parseInt(g.betValue))
     .reduce((a, b) => a + b, 0);
 
   const averageBetsValue = allBetsSum / allGuesses.length;
 
-  return parseInt(userGuess.betValue * allBetsSum * betExtraRatio / (allCorrectBetsSum + averageBetsValue) - userGuess.betValue);
+  return parseInt(
+    (userGuess.betValue * allBetsSum * betExtraRatio) /
+      (allCorrectBetsSum + averageBetsValue) -
+      userGuess.betValue
+  );
 }
 
 export async function calculateTotalIncome(fixtureID) {
@@ -376,10 +395,13 @@ export async function calculateTotalIncome(fixtureID) {
   const sortedMatchResults = allMatchResults.sort((a, b) => a.index - b.index);
 
   for (let i = 0; i < users.length; i++) {
-    //totalIncome[users[i].username] = initialPoints;
     const user = users[i];
     const currentTotalIncome = await getTotalIncome(user.uid);
-    const fixtureIncome = await calculateBetIncome(fixtureID, user?.uid, sortedMatchResults);
+    const fixtureIncome = await calculateBetIncome(
+      fixtureID,
+      user?.uid,
+      sortedMatchResults
+    );
 
     const fixture = await getFixture(fixtureID);
 
@@ -391,7 +413,7 @@ export async function calculateTotalIncome(fixtureID) {
       index: fixture?.index,
       totalIncome: currentTotalIncome + fixtureIncome,
       income: fixtureIncome,
-      matchDescription: fixture?.teamA + " vs " + fixture?.teamB
+      matchDescription: fixture?.teamA + " vs " + fixture?.teamB,
     });
   }
 }
@@ -407,8 +429,12 @@ export async function getTotalIncome(userUID) {
   );
 
   const betIncomeSnapshot = await getDocs(betIncomes);
-  const betIncomesList = betIncomeSnapshot.docs.map(doc => doc.data()).sort((a, b) => b.index - a.index);
-  return betIncomesList?.length > 0 ? betIncomesList[0].totalIncome : null;
+  const betIncomesList = betIncomeSnapshot.docs
+    .map((doc) => doc.data())
+    .sort((a, b) => b.index - a.index);
+  return betIncomesList?.length > 0
+    ? betIncomesList[0].totalIncome
+    : initialPoints;
 }
 
 export async function getBetIncome(fixtureID) {
@@ -421,7 +447,7 @@ export async function getBetIncome(fixtureID) {
   );
 
   const betIncomeSnapshot = await getDocs(betIncomes);
-  const betIncomesList = betIncomeSnapshot.docs.map(doc => doc.data());
+  const betIncomesList = betIncomeSnapshot.docs.map((doc) => doc.data());
   return betIncomesList?.length > 0 ? betIncomesList[0].income : null;
 }
 
@@ -433,7 +459,7 @@ export async function getBetIncomesByFixture(fixtureID) {
 
   const betIncomeSnapshot = await getDocs(betIncomes);
 
-  return betIncomeSnapshot.docs.map(doc => doc.data());
+  return betIncomeSnapshot.docs.map((doc) => doc.data());
 }
 
 export async function getBetEstimates(fixtureID) {
@@ -449,7 +475,7 @@ export async function getBetEstimates(fixtureID) {
     if (userGuess == null) {
       userGuess = {
         result: null,
-        betValue: 30
+        betValue: 30,
       };
     }
 
@@ -459,22 +485,26 @@ export async function getBetEstimates(fixtureID) {
 
     const betExtraRatio = 2.25 * extraPointsFactor;
     const allBetsSum = allGuesses
-      .map(g => parseInt(g.betValue))
+      .map((g) => parseInt(g.betValue))
       .reduce((a, b) => a + b, 0);
 
     const allCorrectBetsSum = allGuesses
-      .filter(g => g.result == userGuess.result)
-      .map(g => parseInt(g.betValue))
+      .filter((g) => g.result == userGuess.result)
+      .map((g) => parseInt(g.betValue))
       .reduce((a, b) => a + b, 0);
 
     const averageBetsValue = allBetsSum / allGuesses.length;
 
-    const maxIncome = parseInt(userGuess.betValue * allBetsSum * betExtraRatio / (allCorrectBetsSum + averageBetsValue) - userGuess.betValue);
+    const maxIncome = parseInt(
+      (userGuess.betValue * allBetsSum * betExtraRatio) /
+        (allCorrectBetsSum + averageBetsValue) -
+        userGuess.betValue
+    );
 
     ret.push({
       fixtureID,
       userUID,
-      maxIncome
+      maxIncome,
     });
   }
 
@@ -482,18 +512,18 @@ export async function getBetEstimates(fixtureID) {
 }
 
 export async function getAllTotalIncomes() {
-  const betIncomes = query(
-    collection(db, "betIncomes")
-  );
+  const betIncomes = query(collection(db, "betIncomes"));
 
   const betIncomeSnapshot = await getDocs(betIncomes);
 
-  return betIncomeSnapshot.docs.map(doc => doc.data()).sort((a, b) => a.index - b.index);
+  return betIncomeSnapshot.docs
+    .map((doc) => doc.data())
+    .sort((a, b) => a.index - b.index);
 }
 
 function renameFile(originalFile, newName) {
   return new File([originalFile], newName, {
-      type: originalFile.type,
-      lastModified: originalFile.lastModified,
+    type: originalFile.type,
+    lastModified: originalFile.lastModified,
   });
 }
