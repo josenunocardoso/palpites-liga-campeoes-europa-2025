@@ -78,16 +78,7 @@ class HistoryTooltip extends Component {
 }
 
 export default class BetResults extends Component {
-  colors = [
-    "blue",
-    "green",
-    "red",
-    "yellow",
-    "orange",
-    "grey",
-    "pink",
-    "purple",
-  ];
+  colors = ["blue", "green", "red", "yellow", "orange", "grey", "purple"];
 
   allUsers = [];
 
